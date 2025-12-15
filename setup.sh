@@ -24,6 +24,15 @@ mount /dev/sda1 /mnt/old
 
 rsync -aHAX --numeric-ids --info=progress2 --exclude={"/dev/*","/proc/*","/sys/*","/run/*","/tmp/*","/mnt/*","/media/*","/lost+found"} /mnt/old/ /mnt/new/
 
+umount -l /mnt/old /mnt/new
+pvcreate -y /dev/sda1
+vgextend vg0 /dev/sda1
+pvmove /dev/sda2 /dev/sda1
+vgreduce vg0 /dev/sda2
+pvremove /dev/sda2
+
+mount /dev/vg0/root /mnt/new
+
 for d in dev proc sys run; do mount --bind /$d /mnt/new/$d; done
 chroot /mnt/new /bin/bash -x <<'EOF'
   dnf install -y lvm2 grub2 grubby
@@ -41,10 +50,3 @@ chroot /mnt/new /bin/bash -x <<'EOF'
   grub2-mkconfig -o /boot/grub2/grub.cfg
   grub2-install --recheck /dev/sda
 EOF
-
-# umount -l /mnt/old /mnt/new
-# pvcreate -y /dev/sda1
-# vgextend vg0 /dev/sda1
-# pvmove /dev/sda2 /dev/sda1
-# vgreduce vg0 /dev/sda2
-# pvremove /dev/sda2
