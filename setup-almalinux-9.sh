@@ -1,12 +1,12 @@
 #!/bin/bash
 
-e2fsck -f -y /dev/sda1
-resize2fs /dev/sda1 99G
+echo Yes | parted ---pretend-input-tty /dev/sda resizepart 1 50GiB
 
-echo Yes | parted ---pretend-input-tty /dev/sda resizepart 1 100GiB
-parted ---pretend-input-tty /dev/sda mkpart primary 100GiB 100%
+e2fsck -f -y /dev/sda1
+resize2fs /dev/sda1 49G
+
+parted ---pretend-input-tty /dev/sda mkpart primary 50GiB 95GiB
 parted ---pretend-input-tty /dev/sda set 2 lvm on
-partprobe /dev/sda
 
 pvcreate /dev/sda2
 vgcreate vg0 /dev/sda2
@@ -50,8 +50,8 @@ mount /dev/sda1 /mnt/old
 
 # Copy files
 rsync -aHAX --numeric-ids --info=progress2 --exclude={"/home/*","/dev/*","/proc/*","/sys/*","/run/*","/tmp/*","/mnt/*","/media/*","/lost+found"} /mnt/old/ /mnt/new/
-
 umount -l /mnt/old /mnt/new/var/log /mnt/new/var /mnt/new
+
 pvcreate -y /dev/sda1
 vgextend vg0 /dev/sda1
 pvmove /dev/sda2 /dev/sda1
@@ -61,7 +61,6 @@ pvremove /dev/sda2
 parted ---pretend-input-tty /dev/sda rm 2
 parted ---pretend-input-tty /dev/sda set 1 lvm on
 parted ---pretend-input-tty /dev/sda resizepart 1 100%
-partprobe /dev/sda
 pvresize /dev/sda1
 
 mount /dev/vg0/root /mnt/new
