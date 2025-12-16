@@ -1,5 +1,8 @@
 #!/bin/bash
 
+e2fsck -f -y /dev/sda1
+resize2fs /dev/sda1 49G || true
+
 echo Yes | parted ---pretend-input-tty /dev/sda resizepart 1 50GiB
 partprobe /dev/sda
 
