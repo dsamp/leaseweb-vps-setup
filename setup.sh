@@ -71,7 +71,7 @@ mount /dev/vg0/var-tmp /mnt/new/var/tmp
 
 for d in dev proc sys run; do mount --bind /$d /mnt/new/$d; done
 chroot /mnt/new /bin/bash -x <<'EOF'
-  dnf install -y lvm2 grub2 grubby
+  wget -qO- https://raw.githubusercontent.com/dsamp/leaseweb-vps-setup/refs/heads/main/setup-chroot-p1.sh | bash
   
   BLKID_ROOT=$(blkid -s UUID -o value /dev/vg0/root)
   echo "UUID=$BLKID_ROOT / ext4 defaults,rw,relatime 0 0" > /etc/fstab
@@ -99,8 +99,8 @@ chroot /mnt/new /bin/bash -x <<'EOF'
   grubby --update-kernel=ALL --remove-args="root=UUID=$BLKID_ROOT"
   grubby --update-kernel=ALL --args="root=UUID=$BLKID_ROOT rd.lvm.lv=vg0/root"
   
-  dracut -f --regenerate-all
-  
+  wget -qO- https://raw.githubusercontent.com/dsamp/leaseweb-vps-setup/refs/heads/main/setup-chroot-p2.sh | bash
+
   echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
   grub2-mkconfig -o /boot/grub2/grub.cfg
   grub2-install --recheck /dev/sda
