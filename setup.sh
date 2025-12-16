@@ -20,14 +20,14 @@ mkfs.ext4 /dev/vg0/home
 lvcreate -L 10G -n var vg0
 mkfs.ext4 /dev/vg0/var
 
-lvcreate -L 5G -n var-tmp vg0
-mkfs.ext4 /dev/vg0/var-tmp
+lvcreate -L 5G -n var_tmp vg0
+mkfs.ext4 /dev/vg0/var_tmp
 
-lvcreate -L 5G -n var-log vg0
-mkfs.ext4 /dev/vg0/var-log
+lvcreate -L 5G -n var_log vg0
+mkfs.ext4 /dev/vg0/var_log
 
-lvcreate -L 5G -n var-log-audit vg0
-mkfs.ext4 /dev/vg0/var-log-audit
+lvcreate -L 5G -n var_log_audit vg0
+mkfs.ext4 /dev/vg0/var_log_audit
 
 lvcreate -L 4G -n swap vg0
 mkswap /dev/vg0/swap
@@ -40,7 +40,7 @@ mkdir -p /mnt/new/var
 mount /dev/vg0/var /mnt/new/var
 
 mkdir -p /mnt/new/var/log
-mount /dev/vg0/var-log /mnt/new/var/log
+mount /dev/vg0/var_log /mnt/new/var/log
 
 mkdir -p /mnt/new/var/tmp
 
@@ -66,8 +66,8 @@ pvresize /dev/sda1
 
 mount /dev/vg0/root /mnt/new
 mount /dev/vg0/var /mnt/new/var
-mount /dev/vg0/var-log /mnt/new/var/log
-mount /dev/vg0/var-tmp /mnt/new/var/tmp
+mount /dev/vg0/var_log /mnt/new/var/log
+mount /dev/vg0/var_tmp /mnt/new/var/tmp
 
 for d in dev proc sys run; do mount --bind /$d /mnt/new/$d; done
 chroot /mnt/new /bin/bash -x <<'EOF'
@@ -82,13 +82,13 @@ chroot /mnt/new /bin/bash -x <<'EOF'
   BLKID=$(blkid -s UUID -o value /dev/vg0/var)
   echo "UUID=$BLKID /var ext4 defaults,rw,nosuid,nodev,relatime 0 0" >> /etc/fstab
 
-  BLKID=$(blkid -s UUID -o value /dev/vg0/var-tmp)
+  BLKID=$(blkid -s UUID -o value /dev/vg0/var_tmp)
   echo "UUID=$BLKID /var/tmp ext4 defaults,rw,nosuid,nodev,noexec,relatime 0 0" >> /etc/fstab
 
-  BLKID=$(blkid -s UUID -o value /dev/vg0/var-log)
+  BLKID=$(blkid -s UUID -o value /dev/vg0/var_log)
   echo "UUID=$BLKID /var/log ext4 defaults,rw,nosuid,nodev,noexec,relatime 0 0" >> /etc/fstab
 
-  BLKID=$(blkid -s UUID -o value /dev/vg0/var-log-audit)
+  BLKID=$(blkid -s UUID -o value /dev/vg0/var_log_audit)
   echo "UUID=$BLKID /var/log/audit ext4 defaults,rw,nosuid,nodev,noexec,relatime 0 0" >> /etc/fstab
 
   echo "tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0" >> /etc/fstab
