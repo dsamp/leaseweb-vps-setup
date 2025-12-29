@@ -1,6 +1,6 @@
 #!/bin/bash
 
-read -p "Host name: " HOSTNAME
+read -p "Host name: " HOSTNAME </dev/tty
 while [ -z "$HOSTNAME" ]; do
   read -p "Invalid hostname, try again: " HOSTNAME
 done
