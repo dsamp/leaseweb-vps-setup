@@ -1,3 +1,9 @@
+## AlmaLinux 8
+
+```sh
+wget -qO- https://raw.githubusercontent.com/dsamp/leaseweb-vps-setup/refs/heads/main/setup-almalinux-8.sh | bash
+```
+
 ## AlmaLinux 9
 
 ```sh
