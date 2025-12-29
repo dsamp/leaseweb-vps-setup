@@ -98,7 +98,8 @@ EOF
   dnf makecache
   dnf update -y
   dnf install -y epel-release
-  dnf install -y cloud-manager-agent grub2 grubby lvm2
+  # dnf install -y cloud-manager-agent
+  dnf install -y grub2 grubby lvm2
 
   BLKID_ROOT=$(blkid -s UUID -o value /dev/vg0/root)
   echo "UUID=$BLKID_ROOT / ext4 defaults,rw,relatime 0 0" > /etc/fstab
