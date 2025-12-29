@@ -1,8 +1,8 @@
 #!/bin/bash
 
-read -p "Host name: " HOSTNAME </dev/tty
-while [ -z "$HOSTNAME" ]; do
-  read -p "Invalid hostname, try again: " HOSTNAME
+read -p "Host name: " HOST </dev/tty
+while [ -z "$HOST" ]; do
+  read -p "Invalid hostname, try again: " HOST
 done
 
 e2fsck -f -y /dev/sda1
@@ -81,9 +81,12 @@ mount /dev/vg0/var_tmp /mnt/new/var/tmp
 
 for d in dev proc sys run; do mount --bind /$d /mnt/new/$d; done
 
-export HOSTNAME
-chroot /mnt/new /bin/bash -x <<'EOF'
+export HOST
+chroot /mnt/new /bin/bash -x <<'EOC'
+  set -e
+
   apt update
+  apt upgrade -y
   apt install -y gnupg2
 
   install -d -m 0755 /etc/apt/keyrings
@@ -95,7 +98,8 @@ chroot /mnt/new /bin/bash -x <<'EOF'
     | tee /etc/apt/sources.list.d/devgard3n.list
 
   apt update
-  apt install -y cloud-manager-agent grub2 lvm2
+  apt install -y \ #cloud-manager-agent
+    grub2 lvm2
 
   BLKID_ROOT=$(blkid -s UUID -o value /dev/vg0/root)
   echo "UUID=$BLKID_ROOT / ext4 defaults,rw,relatime 0 0" > /etc/fstab
@@ -123,8 +127,6 @@ chroot /mnt/new /bin/bash -x <<'EOF'
   update-grub
   grub-install --recheck /dev/sda
 
-  hostnamectl set-hostname "$HOSTNAME" --static
-  echo "$HOSTNAME" > /etc/hostname
-
-  echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/00-local.conf   
-EOF
+  hostnamectl set-hostname "$HOST" --static
+  echo "$HOST" > /etc/hostname
+EOC

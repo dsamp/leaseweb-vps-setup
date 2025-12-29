@@ -1,8 +1,8 @@
 #!/bin/bash
 
-read -p "Host name: " HOSTNAME </dev/tty
-while [ -z "$HOSTNAME" ]; do
-  read -p "Invalid hostname, try again: " HOSTNAME
+read -p "Host name: " HOST </dev/tty
+while [ -z "$HOST" ]; do
+  read -p "Invalid hostname, try again: " HOST
 done
 
 e2fsck -f -y /dev/sda1
@@ -81,8 +81,10 @@ mount /dev/vg0/var_tmp /mnt/new/var/tmp
 
 for d in dev proc sys run; do mount --bind /$d /mnt/new/$d; done
 
-export HOSTNAME
+export HOST
 chroot /mnt/new /bin/bash -x <<'EOC'
+  set -e
+
   cat > /etc/yum.repos.d/devgard3n.repo <<EOF
 [devgard3n]
 name=Devgard3n Repository
@@ -130,8 +132,6 @@ EOF
   grub2-mkconfig -o /boot/grub2/grub.cfg
   grub2-install --recheck /dev/sda
 
-  hostnamectl set-hostname "$HOSTNAME" --static
-  echo "$HOSTNAME" > /etc/hostname
-
-  echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/00-local.conf   
+  hostnamectl set-hostname "$HOST" --static
+  echo "$HOST" > /etc/hostname
 EOC
