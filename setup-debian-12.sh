@@ -18,44 +18,44 @@ parted /dev/sda mkpart primary 50GiB 95GiB
 parted /dev/sda set 2 lvm on
 partprobe /dev/sda
 
-pvcreate /dev/sda2
+pvcreate /dev/sda2 && \
 vgcreate vg0 /dev/sda2
 
-lvcreate -L 10G -n root vg0
+lvcreate -L 10G -n root vg0 && \
 mkfs.ext4 /dev/vg0/root
 
-lvcreate -L 5G -n home vg0
+lvcreate -L 5G -n home vg0 && \
 mkfs.ext4 /dev/vg0/home
 
-lvcreate -L 10G -n var vg0
+lvcreate -L 10G -n var vg0 && \
 mkfs.ext4 /dev/vg0/var
 
-lvcreate -L 5G -n var_tmp vg0
+lvcreate -L 5G -n var_tmp vg0 && \
 mkfs.ext4 /dev/vg0/var_tmp
 
-lvcreate -L 5G -n var_log vg0
+lvcreate -L 5G -n var_log vg0 && \
 mkfs.ext4 /dev/vg0/var_log
 
-lvcreate -L 5G -n var_log_audit vg0
+lvcreate -L 5G -n var_log_audit vg0 && \
 mkfs.ext4 /dev/vg0/var_log_audit
 
 lvcreate -L 4G -n swap vg0
 mkswap /dev/vg0/swap
 
 # Mount LVs
-mkdir -p /mnt/new
+mkdir -p /mnt/new && \
 mount /dev/vg0/root /mnt/new
 
-mkdir -p /mnt/new/var
+mkdir -p /mnt/new/var && \
 mount /dev/vg0/var /mnt/new/var
 
-mkdir -p /mnt/new/var/log
+mkdir -p /mnt/new/var/log && \
 mount /dev/vg0/var_log /mnt/new/var/log
 
 mkdir -p /mnt/new/var/tmp
 
 # Mount old filesystem
-mkdir -p /mnt/old
+mkdir -p /mnt/old && \
 mount /dev/sda1 /mnt/old
 
 # Copy files
@@ -82,21 +82,20 @@ mount /dev/vg0/var_tmp /mnt/new/var/tmp
 for d in dev proc sys run; do mount --bind /$d /mnt/new/$d; done
 
 export HOSTNAME
-chroot /mnt/new /bin/bash -x <<'EOC'
-  cat > /etc/yum.repos.d/devgard3n.repo <<EOF
-[devgard3n]
-name=Devgard3n Repository
-baseurl=https://repo.devgard3n.com/rpm/el9/x86_64/
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://repo.devgard3n.com/keys/RPM-GPG-KEY-devgard3n.asc
-EOF
+chroot /mnt/new /bin/bash -x <<'EOF'
+  apt update
+  apt install -y gnupg2
 
-  dnf makecache
-  dnf update -y
-  dnf install -y epel-release
-  dnf install -y cloud-manager-agent grub2 grubby lvm2
+  install -d -m 0755 /etc/apt/keyrings
+
+  curl -fsSL https://repo.devgard3n.com/keys/devgard3n-archive-keyring.asc \
+    | gpg --dearmor -o /etc/apt/keyrings/devgard3n.gpg
+
+  echo "deb [signed-by=/etc/apt/keyrings/devgard3n.gpg] https://repo.devgard3n.com/deb stable main" \
+    | tee /etc/apt/sources.list.d/devgard3n.list
+
+  apt update
+  apt install -y cloud-manager-agent grub2 lvm2
 
   BLKID_ROOT=$(blkid -s UUID -o value /dev/vg0/root)
   echo "UUID=$BLKID_ROOT / ext4 defaults,rw,relatime 0 0" > /etc/fstab
@@ -120,18 +119,12 @@ EOF
 
   echo "tmpfs /dev/shm tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0" >> /etc/fstab
 
-  grubby --update-kernel=ALL --remove-args="root=/dev/sda1"
-  grubby --update-kernel=ALL --remove-args="root=UUID=$BLKID_ROOT"
-  grubby --update-kernel=ALL --args="root=UUID=$BLKID_ROOT rd.lvm.lv=vg0/root"
-  
-  dracut -f --regenerate-all
-
-  echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
-  grub2-mkconfig -o /boot/grub2/grub.cfg
-  grub2-install --recheck /dev/sda
+  update-initramfs -u -k all
+  update-grub
+  grub-install --recheck /dev/sda
 
   hostnamectl set-hostname "$HOSTNAME" --static
   echo "$HOSTNAME" > /etc/hostname
 
   echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/00-local.conf   
-EOC
+EOF
