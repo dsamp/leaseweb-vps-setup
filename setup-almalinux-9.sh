@@ -83,17 +83,17 @@ for d in dev proc sys run; do mount --bind /$d /mnt/new/$d; done
 
 export HOST
 chroot /mnt/new /bin/bash -x <<'EOC'
-  set -e
+  set -eou pipefail
 
-  cat > /etc/yum.repos.d/devgard3n.repo <<EOF
-[devgard3n]
-name=Devgard3n Repository
-baseurl=https://repo.devgard3n.com/rpm/el9/x86_64/
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://repo.devgard3n.com/keys/RPM-GPG-KEY-devgard3n.asc
-EOF
+#   cat > /etc/yum.repos.d/devgard3n.repo <<EOF
+# [devgard3n]
+# name=Devgard3n Repository
+# baseurl=https://repo.devgard3n.com/rpm/el9/x86_64/
+# enabled=1
+# gpgcheck=1
+# repo_gpgcheck=1
+# gpgkey=https://repo.devgard3n.com/keys/RPM-GPG-KEY-devgard3n.asc
+# EOF
 
   dnf makecache
   dnf update -y
